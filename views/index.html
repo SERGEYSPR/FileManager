@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Файловый менеджер</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/public/stylesheets/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="/public/stylesheets/main.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+
+<!--<div id="upload-area"></div>-->
+
+<script id="playlist-template" type="text/x-handlebars-template">
+    {{#each songs}}
+    <div class="song">{{name}}</div>
+    {{/each}}
+</script>
+
+<div id="player-wrap" class="playlist-popup">
+    <div id="player-header" class="player-head">
+        <div class="playing-song">
+            <div id="artist" class="artist"></div>
+            <div id="title" class="title"></div>
+        </div>
+        <div class="head-content">
+
+            <div class="control-pane">
+                <div class="my-progress-bar-wrap">
+                    <div id="player-progress-bar" class="my-progress-bar">
+                        <div id="player-progress-slider" class="my-progress-slider" style="width: 0%;"></div>
+                    </div>
+                </div>
+                <div id="player-controls" class="player-controls">
+                    <div id="repeat" class="player-control-wrap">
+                        <div class="player-control" style="background-image: url('/public/icons/player/repeat.png');"></div>
+                    </div>
+                    <div id="prev" class="player-control-wrap">
+                        <div class="player-control" style="background-image: url('/public/icons/player/previous.png');"></div>
+                    </div>
+                    <div id="play-pause" class="player-control-wrap">
+                        <div class="player-control" style="background-image: url('/public/icons/player/pause.png');"></div>
+                    </div>
+                    <div id="next" class="player-control-wrap">
+                        <div class="player-control" style="background-image: url('/public/icons/player/next.png');"></div>
+                    </div>
+                    <div id="shuffle" class="player-control-wrap">
+                        <div class="player-control" style="background-image: url('/public/icons/player/shuffle.png');"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="separator"></div>
+        </div>
+    </div>
+    <div id="playlist" class="playlist"></div>
+</div>
+
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">Файловый менеджер</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <div class="navbar-form navbar-right">
+                <input id="search-field" type="text" class="form-control" placeholder="Поиск...">
+            </div>
+            <div id="minimize-player" style="float: right; height: 50px;">
+                <span id="minimize-player-text" style="display: inline-block; vertical-align: middle;">Название песни</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="col-sm-8 col-md-8 main">
+
+        <script id="breadcrumbs-template" type="text/x-handlebars-template">
+            <li><a href="#/">...</a></li>
+            {{#each segments}}
+            {{#if @last}}
+            <li class="active">{{name}}</li>
+            {{else}}
+            <li><a href="#{{path}}">{{name}}</a></li>
+            {{/if}}
+            {{/each}}
+        </script>
+
+        <div id="navigation-bar">
+            <ol class="breadcrumb" id="breadcrumbs-container"></ol>
+
+            <nav class="navbar navbar-default" role="navigation">
+                <div class="container-fluid">
+                    <!-- Brand and toggle get grouped for better mobile display -->
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse"
+                                data-target="#bs-example-navbar-collapse-1">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                    </div>
+
+                    <!-- Collect the nav links, forms, and other content for toggling -->
+                    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                        <ul class="nav navbar-nav navbar-right" id="node-list-menu">
+                            <li>
+                                <a href="javascript:;" id="open-upload-file-dialog"><span class="glyphicon glyphicon-floppy-open"></span>&nbsp Загрузить</a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" id="open-create-folder-dialog"><span class="glyphicon glyphicon-folder-close"></span>&nbsp Создать папку</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- /.navbar-collapse -->
+                </div>
+                <!-- /.container-fluid -->
+            </nav>
+        </div>
+
+        <ul class="nav nav-pills" id="node-item-menu">
+            <li>
+                <a href="javascript:;" id="remove-node"><span class="glyphicon glyphicon-trash"></span>&nbsp Удалить</a>
+            </li>
+            <li>
+                <a href="javascript:;" id="download-file"><span class="glyphicon glyphicon-floppy-save"></span>&nbsp Скачать</a>
+            </li>
+        </ul>
+
+        <script id="node-template" type="text/x-handlebars-template">
+            <tr class="node-item" draggable="true">
+                <td>
+                    <span style="background-image: url('/public/icons/{{type}}.ico')" class="node-item-icon"></span>
+                </td>
+                <td>{{name}}</td>
+                <td>{{type}}</td>
+                {{#if size}}
+                <td>{{size}} bytes</td>
+                {{else}}
+                <td></td>
+                {{/if}}
+            </tr>
+        </script>
+
+        <div class="table-responsive">
+            <table class="table table-striped" id="node-list">
+                <thead>
+                <tr>
+                    <th style="width: 60px;"></th>
+                    <th>Название</th>
+                    <th style="width: 100px;">Тип</th>
+                    <th style="width: 200px;">Изменено</th>
+                </tr>
+                </thead>
+                <tbody id="node-items-container"></tbody>
+            </table>
+            <div id="upload-view">
+                <div id="upload-view-inner">Отпустите файл, чтобы начать загрузку.</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4 col-md-4 viewer" id="viewer"></div>
+</div>
+
+<div class="modal fade bs-example-modal-sm" role="dialog" id="upload-file-dialog">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">×</button>
+                <h4 class="modal-title">Загрузка файла</h4>
+            </div>
+            <div class="modal-body clearfix">
+                <input id="files-to-upload" type="file" multiple /><br />
+                <input id="upload-file" type="button" class="btn btn-primary pull-right" value="Загрузить" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade bs-example-modal-sm" role="dialog" id="create-folder-dialog">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">×</button>
+                <h4 class="modal-title">Создание папки</h4>
+            </div>
+            <div class="modal-body clearfix">
+                <input id="folder-name" type="text" class="form-control" placeholder="Название или путь" /></br>
+                <input id="create-folder" type="button" class="btn btn-primary pull-right" value="Создать" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script type="text/javascript" src="/public/javascripts/jquery-2.1.0.min.js"></script>
+<script src="/public/javascripts/bootstrap.min.js"></script>
+<script type="text/javascript" src="/public/javascripts/handlebars-v1.3.0.js"></script>
+
+<script type="text/javascript" src="/public/javascripts/d3.v3.min.js"></script>
+<script type="text/javascript" src="/public/javascripts/trianglify.min.js"></script>
+
+<script type="text/javascript" src="/public/javascripts/cdm/filemanager/model.js"></script>
+<script type="text/javascript" src="/public/javascripts/cdm/filemanager/view.js"></script>
+<script type="text/javascript" src="/public/javascripts/cdm/filemanager/controller.js"></script>
+
+<script type="text/javascript" src="/public/javascripts/cdm/audioplayer/model.js"></script>
+<script type="text/javascript" src="/public/javascripts/cdm/audioplayer/view.js"></script>
+<script type="text/javascript" src="/public/javascripts/cdm/audioplayer/controller.js"></script>
+
+
+<script type="application/javascript">
+    var cdm = cdm || {};
+    cdm.filemanager = cdm.filemanager || {};
+    cdm.audioplayer = cdm.audioplayer || {};
+
+    // container for Handlebar.js templates
+    cdm.filemanager.Templates = {};
+    cdm.audioplayer.Templates = {};
+
+    // definitions for custom events
+    cdm.filemanager.Events = {
+        nodeOpened: "fm.node-opened",
+        nodeRemoving: "fm.node-removing",
+        nodeMoving: "fm.node-moving",
+        fileDownloading: "fm.file-downloading",
+        fileUploading: "fm.file-uploading",
+        folderCreating: "fm.folder-creating",
+        search: "fm.search"
+    };
+
+    // definitions for custom events of audio player
+    cdm.audioplayer.Events = {
+        startSong: "ap.start-song",
+        playPause: "ap.play-pause",
+        pause: "ap.pause",
+        prev: "ap.prev",
+        next: "ap.next",
+        rewind: "ap.rewind",
+        songEnded: "ap.song-ended",
+        progressUpdate: "ap.progress-update",
+        playlistUpdate: "ap.playlist-update"
+    };
+
+    // different elements which are used on the page;
+    // used to get rid of the identifiers in the view.js
+
+    cdm.audioplayer.Elements = {
+        songClass: ".song",
+        controlClass: ".player-control",
+        playerWrap: $("#player-wrap"),
+        playerHeader: $("#player-header"),
+        playlist: $("#playlist"),
+        songArtist: $("artist"),
+        songTitle: $("#title"),
+        playerControls: $("#player-controls"),
+        repeat: $("#repeat"),
+        shuffle: $("#shuffle"),
+        prev: $("#prev"),
+        next: $("#next"),
+        playPause: $("#play-pause"),
+        playerProgressBar: $("#player-progress-bar"),
+        playerProgressSlider: $("#player-progress-slider"),
+
+        minimizePlayer: $("#minimize-player"),
+        minimizePlayerText: $("#minimize-player-text")
+    };
+
+    cdm.filemanager.Elements = {
+        nodeList: $("#node-list"),
+        nodeItemsContainer: $("#node-items-container"),
+        nodeItemClass: ".node-item",
+        nodeItemSelectedClassName: "selected",
+        nodeItemIconClass: ".node-item-icon",
+        nodeItemMenu: $("#node-item-menu"),
+        breadcrumbsContainer: $("#breadcrumbs-container"),
+        currentFolderFormElementName: "currentFolder",
+        dataViewer: $("#viewer"),
+        uploadArea: $("#upload-area"),
+        uploadView: $("#upload-view"),
+        searchField: $("#search-field"),
+        navigationBar: $("#navigation-bar"),
+        buttons: {
+            downloadFile: $("#download-file"),
+            removeNode: $("#remove-node"),
+            openUploadFileDialog: $("#open-upload-file-dialog"),
+            openCreateFolderDialog: $("#open-create-folder-dialog"),
+            uploadFile: $("#upload-file"),
+            createFolder: $("#create-folder")
+        },
+        dialogs: {
+            uploadFile: $("#upload-file-dialog"),
+            createFolder: $("#create-folder-dialog")
+        },
+        inputs: {
+            filesToUpload: $("#files-to-upload"),
+            newFolderName: $("#folder-name")
+        }
+    };
+
+    $(function () {
+        cdm.filemanager.Templates.nodeTemplate = Handlebars.compile($("#node-template").html());
+        cdm.filemanager.Templates.breadcrumbsTemplate = Handlebars.compile($("#breadcrumbs-template").html());
+        cdm.audioplayer.Templates.playlistTemplate = Handlebars.compile($("#playlist-template").html());
+
+        var model = new cdm.filemanager.NodeListModel();
+        var view = new cdm.filemanager.NodeListView(model, cdm.filemanager.Elements);
+        var controller = new cdm.filemanager.NodeListController(model, view);
+
+        var audioModel = new cdm.audioplayer.PlayListModel();
+        var audioView = new cdm.audioplayer.PLayListView(audioModel, cdm.audioplayer.Elements);
+        var audioController = new cdm.audioplayer.PlayListController(audioModel, audioView);
+
+        $(window).trigger("hashchange");
+    });
+</script>
+
+</body>
+</html>
