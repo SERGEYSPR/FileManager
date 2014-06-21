@@ -219,6 +219,7 @@ body {
 }
 
 .playing-song {
+    padding: 20px;
     text-align: center;
 }
 
