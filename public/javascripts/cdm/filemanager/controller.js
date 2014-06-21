@@ -134,6 +134,8 @@ cdm.filemanager.NodeListController = function(model, view) {
                 }
             });
         }
+
+        cdm.filemanager.Elements.inputs.filesToUpload.val("");
     });
 
     $(view).on(cdm.filemanager.Events.folderCreating, function() {
@@ -144,6 +146,8 @@ cdm.filemanager.NodeListController = function(model, view) {
                 cdm.filemanager.Elements.dialogs.createFolder.modal("hide");
                 self.reload();
             });
+
+        cdm.filemanager.Elements.inputs.newFolderName.val("");
     });
 
     $(view).on(cdm.filemanager.Events.search, function(event, searchQuery) {
