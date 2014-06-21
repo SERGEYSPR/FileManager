@@ -19,15 +19,21 @@ cdm.audioplayer.PlayListController = function(model, view) {
     $(window).on(cdm.audioplayer.Events.startSong, function (event, playlist) {
         model.setSongs(playlist.songs);
         model.setPlayingSongId(playlist.requiredSongId);
-        view.rebuildPlayList();
 
+        view.rebuildPlayList();
         view.updateBackgroundImage();
+        view.updateSongName();
+        view.setPauseIcon();
+
         self.player.setAttribute("src", model.getPlayingSong().src);
         self.player.play();
     });
 
     $(view).on(cdm.audioplayer.Events.startSong, function () {
         view.updateBackgroundImage();
+        view.updateSongName();
+        view.setPauseIcon();
+
         self.player.setAttribute("src", model.getPlayingSong().src);
         self.player.play();
     });
